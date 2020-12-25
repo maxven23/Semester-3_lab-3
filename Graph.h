@@ -62,6 +62,9 @@ public:
 		if (!containVertex) {
 			vertexList->Prepend(toAdd);
 		}
+		else {
+			cout << "\n\tThis Vertex is already in Graph!";
+		}
 	}
 	void addEdge(Name first, Name second, Weight weight) {
 
@@ -95,6 +98,9 @@ public:
 		}
 		if (!containSecond) {
 			vertexList->Prepend(secondToAdd);
+		}
+		if (containFirst && containSecond) {
+			cout << "\n\tThis Edge is already in Graph!";
 		}
 	}
 
@@ -235,21 +241,78 @@ public:
 					}
 			count++;
 		}
+		int start = endnode;
+		vector<pair<int, int>> path;
 		for (i = 0; i < this->getVertexCount(); i++)
 			if (i != startnode && i == endnode) {
+				string graphAPI_V;
 				if (distance[i] != INF) {
 					cout << "\n\tDistance to Vertex '" << this->vertexList->Get(i)->getName() << "' = " << distance[i];
 					cout << "\n\tPath: \t'" << this->vertexList->Get(i)->getName();
 					j = i;
 					do {
+						graphAPI_V += this->vertexList->Get(j)->getName();
+						graphAPI_V += "[color=\"olivedrab1\",style=filled,fillcolor=\"olivedrab1\"] ";
+						path.push_back(make_pair(j, pred[j]));
 						j = pred[j];
 						cout << "' <- '" << this->vertexList->Get(j)->getName();
 					} while (j != startnode);
 					cout << "'" << endl;
+					graphAPI_V += this->vertexList->Get(j)->getName();
+					graphAPI_V += "[color=\"olivedrab1\",style=filled,fillcolor=\"olivedrab1\"] ";
 				}
 				else {
 					cout << "\n\tYou can't get to Vertex '" << this->vertexList->Get(endnode)->getName() << "' from Vertex '" << this->vertexList->Get(startnode)->getName() << "'\n";
 				}
+
+				string graphAPI, graphAPI_edge;
+				j = i;
+				if (this->getEdgeCount() > 0) {
+					graphAPI = "https://chart.apis.google.com/chart?cht=gv&chl=digraph{bgcolor=\"skyblue\";";
+					for (int i = 0; i < this->getVertexCount(); i++) {
+						graphAPI += this->vertexList->Get(i)->getName();
+						graphAPI += "[color=\"white\",style=filled,fillcolor=\"white\"] ";
+					}
+					graphAPI += graphAPI_V;
+					string label = "[label=\"";
+					int firstV, secondV;
+					for (int k = 0; k < this->getEdgeCount(); k++) {
+						graphAPI += this->edgeList->Get(k)->getVertex().first->getName();
+						graphAPI += "->";
+						graphAPI += this->edgeList->Get(k)->getVertex().second->getName();
+						graphAPI += label;
+						graphAPI += to_string(this->edgeList->Get(k)->getWeight());
+						graphAPI += "\",";
+						graphAPI_edge = "color=\"white\"] ";
+						for (int f = 0; f < this->getVertexCount(); f++) {
+							if (this->edgeList->Get(k)->getVertex().first->getName() == this->vertexList->Get(f)->getName()) {
+								secondV = f;
+							}
+							if (this->edgeList->Get(k)->getVertex().second->getName() == this->vertexList->Get(f)->getName()) {
+								firstV = f;
+							}
+						}
+						for (int f = 0; f < path.size(); f++) {
+							if (firstV == path[f].first && secondV == path[f].second) {
+								graphAPI_edge = "color=\"olivedrab1\"] ";
+							}
+						}
+						graphAPI += graphAPI_edge;
+					}
+					graphAPI += "}";
+				}
+				else {
+					graphAPI = "https://chart.apis.google.com/chart?cht=gv&chl=graph{bgcolor=\"skyblue\";";
+					graphAPI += graphAPI_V;
+					for (int k = 0; k < this->getVertexCount(); k++) {
+						graphAPI += this->vertexList->Get(k)->getName();
+						graphAPI += "[color=\"white\",style=filled,fillcolor=\"white\"] ";
+					}
+					graphAPI += "}";
+				}
+				cout << "\n========================================================================================================================";
+				cout << "\n\tGraph Visualisation (shortest path): \n\n\n" << graphAPI << "\n\n\n\t(!JUST COPY AND PASTE AS URL!) \n";
+				cout << "========================================================================================================================";
 			}
 	}
 
@@ -352,7 +415,42 @@ public:
 			cout << endl;
 		}
 	}
+	
+	void getGraphAPI() {
+		string graphAPI, graphAPI_edge;
 
+		ListSequence<Graph<char, int>::Edge<char, int>*>* G = this->edgeList;
+		if (G->GetSize() > 0) {
+			ListSequence<Graph<char, int>::Vertex<char>*>* E = this->vertexList;
+			graphAPI = "https://chart.apis.google.com/chart?cht=gv&chl=digraph{bgcolor=\"skyblue\";";
+			for (int i = 0; i < this->getVertexCount(); i++) {
+				graphAPI += E->Get(i)->getName();
+				graphAPI += "[color=\"white\",style=filled,fillcolor=\"white\"] ";
+			}
+			string label = "[color=\"white\",label=\"";
+			for (int i = 0; i < this->getEdgeCount(); i++) {
+				graphAPI += G->Get(i)->getVertex().first->getName();
+				graphAPI += "->";
+				graphAPI += G->Get(i)->getVertex().second->getName();
+				graphAPI += label;
+				graphAPI += to_string(G->Get(i)->getWeight());
+				graphAPI += "\"] ";
+			}
+			graphAPI += "}";
+		}
+		else {
+			ListSequence<Graph<char, int>::Vertex<char>*>* E = this->getVetex();
+			graphAPI = "https://chart.apis.google.com/chart?cht=gv&chl=graph{bgcolor=\"skyblue\";";
+			for (int i = 0; i < this->getVertexCount(); i++) {
+				graphAPI += E->Get(i)->getName();
+				graphAPI += "[color=\"white\",style=filled,fillcolor=\"white\"] ";
+			}
+			graphAPI += "}";
+		}
+		cout << "\n========================================================================================================================";
+		cout << "\n\n\tGraph Visualisation: \n\n\n" << graphAPI << "\n\n\n\t(!JUST COPY AND PASTE AS URL!) \n";
+		cout << "========================================================================================================================";
+	}
 
 	ListSequence<Edge<Name, Weight>*>* getEdges() {
 		return this->edgeList;

@@ -110,8 +110,12 @@ int main() {
 			cout << "\n\tEnter a name of End Vertex:\t";
 			cin >> to;
 
-			//cout << "\n\n\t     " << "Min Distances from '" << from << "':";
-			graph->dijkstra(from, to);
+			if (graph->containsVertex(from) == 1 && graph->containsVertex(to) == 1) {
+				graph->dijkstra(from, to);
+			}
+			else {
+				cout << "\n\tThere are NO such Vertexes (one or both) in Graph!";
+			}
 			system("pause>>void");
 			break;
 		}
@@ -142,38 +146,7 @@ int main() {
 		case 7: 
 		{
 			system("cls");
-			string graphAPI;
-
-			ListSequence<Graph<char, int>::Edge<char, int>*>* G = graph->getEdges();
-			if (G->GetSize() > 0) {
-				ListSequence<Graph<char, int>::Vertex<char>*>* E = graph->getVetex();
-				graphAPI = "https://chart.apis.google.com/chart?cht=gv&chl=digraph{";
-				for (int i = 0; i < graph->getVertexCount(); i++) {
-					graphAPI += E->Get(i)->getName();
-					graphAPI += " ";
-				}
-				string label = "[label=\"";
-				for (int i = 0; i < graph->getEdgeCount(); i++) {
-					graphAPI += G->Get(i)->getVertex().first->getName();
-					graphAPI += "->";
-					graphAPI += G->Get(i)->getVertex().second->getName();
-					graphAPI += label;
-					graphAPI += to_string(G->Get(i)->getWeight());
-					graphAPI += "\"] ";
-				}
-				graphAPI += "}";
-			}
-			else {
-				ListSequence<Graph<char, int>::Vertex<char>*>* E = graph->getVetex();
-				graphAPI = "https://chart.apis.google.com/chart?cht=gv&chl=graph{";
-				for (int i = 0; i < graph->getVertexCount(); i++) {
-					graphAPI += E->Get(i)->getName();
-					graphAPI += " ";
-				}
-				graphAPI += "}";
-			}
-			
-			cout << "\n\n\tGraph Visualisation: \t" << graphAPI << "\n\n\n\t(!JUST COPY AND PASTE AS URL!) \n";
+			graph->getGraphAPI();
 			system("pause>>void");
 			break;
 		}
@@ -187,6 +160,14 @@ int main() {
 			graph->addEdge('E', 'A', 4);
 			graph->addEdge('E', 'C', 1);
 			graph->addEdge('B', 'A', 10);
+			graph->addEdge('A', 'M', 7);
+			graph->addEdge('M', 'B', 8);
+			graph->addEdge('V', 'G', 6);
+			graph->addEdge('V', 'A', 5);
+			graph->addEdge('M', 'G', 31);
+			graph->addEdge('B', 'R', 1);
+			graph->addEdge('R', 'C', 1);
+			graph->addEdge('R', 'D', 9);
 			break;
 		}
 		
