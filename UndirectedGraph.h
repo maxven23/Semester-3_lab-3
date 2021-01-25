@@ -1,9 +1,10 @@
 #pragma once
 #include "Headers.h"
 #include <vector>
+#include "Sorts.h"
 
-template <class Name, class Weight> 
-class Graph {
+template <class Name, class Weight>
+class UndirectedGraph {
 public:
 	template <class Name>
 	class Vertex {
@@ -43,7 +44,7 @@ public:
 	};
 
 public:
-	Graph() {
+	UndirectedGraph() {
 		this->edgeList = new ListSequence<Edge<Name, Weight>*>();
 		this->vertexList = new ListSequence<Vertex<Name>*>();
 	}
@@ -68,23 +69,55 @@ public:
 	}
 	void addEdge(Name first, Name second, Weight weight) {
 
-		if (this->containsEdge(first, second) == -1) {
-			Edge<Name, Weight>* edgeToAdd = new Edge<Name, Weight>(first, second, weight);
-			this->edgeList->Prepend(edgeToAdd);
+		int whichToAdd = 0;
 
-			int whichToAdd = 0;
+		Vertex<Name>* firstToAdd = new Vertex<Name>(first);
+		Vertex<Name>* secondToAdd = new Vertex<Name>(second);
 
-			Vertex<Name>* firstToAdd = new Vertex<Name>(first);
-			Vertex<Name>* secondToAdd = new Vertex<Name>(second);
+		bool containFirst = false;
+		bool containSecond = false;
+		bool containsEdge = false;
 
-			if (containsVertex(first) == -1) {
-				vertexList->Prepend(firstToAdd);
+		for (int i = 0; i < getVertexCount(); i++) {
+			if (this->vertexList->Get(i)->getName() == first) {
+				containFirst = true;
 			}
-			if (containsVertex(second) == -1) {
-				vertexList->Prepend(secondToAdd);
+
+			if (this->vertexList->Get(i)->getName() == second) {
+				containSecond = true;
 			}
 		}
-		else {
+		for (int j = 0; j < getEdgeCount(); j++) {
+			if ((this->edgeList->Get(j)->getVertex().first->getName() == second
+				&& this->edgeList->Get(j)->getVertex().second->getName() == first) || 
+				(this->edgeList->Get(j)->getVertex().first->getName() == first
+				&& this->edgeList->Get(j)->getVertex().second->getName() == second)) 
+			{
+				containsEdge = true;
+			}
+		}
+
+		if (!containFirst && containSecond && !containsEdge) {
+			vertexList->Prepend(firstToAdd);
+			Edge<Name, Weight>* edgeToAdd = new Edge<Name, Weight>(first, second, weight);
+			this->edgeList->Prepend(edgeToAdd);
+		}
+		if (!containSecond && containFirst && !containsEdge) {
+			vertexList->Prepend(secondToAdd);
+			Edge<Name, Weight>* edgeToAdd = new Edge<Name, Weight>(first, second, weight);
+			this->edgeList->Prepend(edgeToAdd);
+		}
+		if (!containFirst && !containSecond && !containsEdge) {
+			vertexList->Prepend(firstToAdd);
+			vertexList->Prepend(secondToAdd);
+			Edge<Name, Weight>* edgeToAdd = new Edge<Name, Weight>(first, second, weight);
+			this->edgeList->Prepend(edgeToAdd);
+		}
+		if (!containsEdge && containFirst && containSecond) {
+			Edge<Name, Weight>* edgeToAdd = new Edge<Name, Weight>(first, second, weight);
+			this->edgeList->Prepend(edgeToAdd);
+		}
+		if (containsEdge) {
 			cout << "\n\tThis Edge is already in Graph!";
 		}
 	}
@@ -99,7 +132,11 @@ public:
 	}
 	int containsEdge(Name first, Name second) {
 		for (int i = 0; i < this->getEdgeCount(); ++i) {
-			if (this->edgeList->Get(i)->getVertex().first->getName() == first && this->edgeList->Get(i)->getVertex().second->getName() == second) {
+			if ((this->edgeList->Get(i)->getVertex().first->getName() == first 
+				&& this->edgeList->Get(i)->getVertex().second->getName() == second) 
+				|| (this->edgeList->Get(i)->getVertex().first->getName() == second 
+				&& this->edgeList->Get(i)->getVertex().first->getName() == first))
+			{
 				return i;
 			}
 		}
@@ -109,6 +146,9 @@ public:
 	void removeEdge(Name first, Name second) {
 		if (containsEdge(first, second) != -1) {
 			this->edgeList->RemoveAt(containsEdge(first, second));
+		}
+		else if (containsEdge(second, first) != -1) {
+			this->edgeList->RemoveAt(containsEdge(second, first));
 		}
 		else {
 			cout << "\n\tThere are no such Edge in Graph!\n";
@@ -120,7 +160,7 @@ public:
 		if (containsVertex(name) != -1) {
 
 			for (int i = 0; i < this->getEdgeCount(); ++i) {
-				if (this->edgeList->Get(i)->getVertex().first->getName() == name) { 
+				if (this->edgeList->Get(i)->getVertex().first->getName() == name) {
 					removeEdge(this->edgeList->Get(i)->getVertex().first->getName(), this->edgeList->Get(i)->getVertex().second->getName());
 					i--;
 				}
@@ -136,6 +176,7 @@ public:
 		}
 	}
 
+	//==============================
 	void returnEdgeList() {
 		for (int i = 0; i < getEdgeCount(); i++) {
 			cout << "\t" << i + 1 << ".  (" << this->edgeList->Get(i)->getVertex().first->getName() << " -> " << this->edgeList->Get(i)->getVertex().second->getName() << "): weight - " << this->edgeList->Get(i)->getWeight() << endl;
@@ -146,10 +187,12 @@ public:
 			cout << "\t" << i + 1 << ".  " << vertexList->Get(i)->getName() << endl;
 		}
 	}
+	//==============================
+
 
 	// Adjacency Matrix
 	vector<vector<Weight>> getAdjMatrix() {
-		vector<vector<Weight> > matrix(this->getVertexCount(), std::vector<Weight>(this->getVertexCount(), 0));
+		vector<vector<Weight>> matrix(this->getVertexCount(), std::vector<Weight>(this->getVertexCount(), 0));
 
 		for (int i = 0; i < this->getVertexCount(); ++i) {
 			for (int j = 0; j < this->getVertexCount(); ++j) {
@@ -162,20 +205,21 @@ public:
 			int scnd = 0;
 			for (int j = 0; j < this->getVertexCount(); ++j) {
 				if (this->edgeList->Get(i)->getVertex().first->getName() == vertexList->Get(j)->getName()) { frst = j; }
-				if (this->edgeList->Get(i)->getVertex().second->getName() == vertexList->Get(j)->getName()) { scnd = j;	}
+				if (this->edgeList->Get(i)->getVertex().second->getName() == vertexList->Get(j)->getName()) { scnd = j; }
 			}
 			if (matrix[frst][scnd] > this->edgeList->Get(i)->getWeight()) {
 				matrix[frst][scnd] = this->edgeList->Get(i)->getWeight();
+				matrix[scnd][frst] = this->edgeList->Get(i)->getWeight();
 			}
 		}
-		
+
 		for (int i = 0; i < this->getVertexCount(); ++i) {
 			matrix[i][i] = 0;
 		}
 
 		return matrix;
 	}
-	
+
 	// Dijkstra
 	void dijkstra(char StartVertex, char EndVertex) {
 
@@ -262,13 +306,13 @@ public:
 					string label = "[label=\"";
 					int firstV, secondV;
 					for (int k = 0; k < this->getEdgeCount(); k++) {
-						graphAPI += this->edgeList->Get(k)->getVertex().first->getName();
-						graphAPI += "->";
-						graphAPI += this->edgeList->Get(k)->getVertex().second->getName();
-						graphAPI += label;
-						graphAPI += to_string(this->edgeList->Get(k)->getWeight());
-						graphAPI += "\",";
-						graphAPI_edge = "color=\"white\"] ";
+						graphAPI_edge = this->edgeList->Get(k)->getVertex().first->getName();
+						graphAPI_edge += "->";
+						graphAPI_edge += this->edgeList->Get(k)->getVertex().second->getName();
+						graphAPI_edge += label;
+						graphAPI_edge += to_string(this->edgeList->Get(k)->getWeight());
+						graphAPI_edge += "\",dir=none,";
+						graphAPI_edge += "color=\"white\"] ";
 						for (int f = 0; f < this->getVertexCount(); f++) {
 							if (this->edgeList->Get(k)->getVertex().first->getName() == this->vertexList->Get(f)->getName()) {
 								secondV = f;
@@ -279,7 +323,24 @@ public:
 						}
 						for (int f = 0; f < path.size(); f++) {
 							if (firstV == path[f].first && secondV == path[f].second) {
-								graphAPI_edge = "color=\"olivedrab1\"] ";
+								graphAPI_edge = "";
+								graphAPI_edge = this->vertexList->Get(secondV)->getName();
+								graphAPI_edge += "->";
+								graphAPI_edge += this->vertexList->Get(firstV)->getName();
+								graphAPI_edge += label;
+								graphAPI_edge += to_string(this->edgeList->Get(k)->getWeight());
+								graphAPI_edge += "\",";
+								graphAPI_edge += "color=\"olivedrab1\"] ";
+							}
+							if (firstV == path[f].second && secondV == path[f].first) {
+								graphAPI_edge = "";
+								graphAPI_edge = this->vertexList->Get(firstV)->getName();
+								graphAPI_edge += "->";
+								graphAPI_edge += this->vertexList->Get(secondV)->getName();
+								graphAPI_edge += label;
+								graphAPI_edge += to_string(this->edgeList->Get(k)->getWeight());
+								graphAPI_edge += "\",";
+								graphAPI_edge += "color=\"olivedrab1\"] ";
 							}
 						}
 						graphAPI += graphAPI_edge;
@@ -349,13 +410,13 @@ public:
 						}
 				count++;
 			}
-			
+
 			string out = "";
 			for (i = 0; i < this->getVertexCount(); i++) {
 				out = "";
 				if (i != startnode) {
 					if (distance[i] != INF) {
-						
+
 						out += this->vertexList->Get(i)->getName();
 
 						j = i;
@@ -377,7 +438,7 @@ public:
 				mtrx[startnode][i] = out;
 			}
 		}
-		
+
 		// OUTPUT
 		cout << "\n\tMATRIX OF PATHS\n\n";
 		cout << "      ";
@@ -400,14 +461,14 @@ public:
 			cout << endl;
 		}
 	}
-	
+
 	void getGraphAPI() {
 		string graphAPI, graphAPI_edge;
 
-		ListSequence<Graph<char, int>::Edge<char, int>*>* G = this->edgeList;
+		ListSequence<UndirectedGraph<char, int>::Edge<char, int>*>* G = this->edgeList;
 		if (G->GetSize() > 0) {
-			ListSequence<Graph<char, int>::Vertex<char>*>* E = this->vertexList;
-			graphAPI = "https://chart.apis.google.com/chart?cht=gv&chl=digraph{bgcolor=\"skyblue\";";
+			ListSequence<UndirectedGraph<char, int>::Vertex<char>*>* E = this->vertexList;
+			graphAPI = "https://chart.apis.google.com/chart?cht=gv&chl=graph{bgcolor=\"skyblue\";";
 			for (int i = 0; i < this->getVertexCount(); i++) {
 				graphAPI += E->Get(i)->getName();
 				graphAPI += "[color=\"white\",style=filled,fillcolor=\"white\"] ";
@@ -415,7 +476,7 @@ public:
 			string label = "[color=\"white\",label=\"";
 			for (int i = 0; i < this->getEdgeCount(); i++) {
 				graphAPI += G->Get(i)->getVertex().first->getName();
-				graphAPI += "->";
+				graphAPI += "--";
 				graphAPI += G->Get(i)->getVertex().second->getName();
 				graphAPI += label;
 				graphAPI += to_string(G->Get(i)->getWeight());
@@ -424,7 +485,7 @@ public:
 			graphAPI += "}";
 		}
 		else {
-			ListSequence<Graph<char, int>::Vertex<char>*>* E = this->getVetex();
+			ListSequence<UndirectedGraph<char, int>::Vertex<char>*>* E = this->getVetex();
 			graphAPI = "https://chart.apis.google.com/chart?cht=gv&chl=graph{bgcolor=\"skyblue\";";
 			for (int i = 0; i < this->getVertexCount(); i++) {
 				graphAPI += E->Get(i)->getName();
@@ -437,13 +498,45 @@ public:
 		cout << "========================================================================================================================";
 	}
 
+	ListSequence<Edge<Name, Weight>*>* sortEdge() {
+
+
+	}
+
+	/*
+	// "Ostov"
+	void smallestFrame() {
+		vector<vector<Weight>> adjMatrix = this->getAdjMatrix();
+		ListSequence<Weight>* weightList = new ListSequence<Weight>();
+		ListSequence<Edge<Name, Weight>*>* edgeListWeighted = new ListSequence<Edge<Name, Weight>*>();
+
+		for (int i = 0; i < this->getVertexCount(); i++) {
+			for (int j = i; j < this->getVertexCount(); j++) {
+				if (adjMatrix[i][j] != INF && adjMatrix[i][j] != 0) {
+					weightList->Prepend(adjMatrix[i][j]);
+				}
+			}
+		}
+
+		quickSorter<Weight>* sorter = new quickSorter<Weight>();
+		sorter->Sort(weightList, greater);
+
+		for (int i = 0; i < weightList->GetSize(); i++) {
+
+		}
+
+	}
+	*/
+
+	//////////////////////////////////////////////////////
+
 	ListSequence<Edge<Name, Weight>*>* getEdges() {
 		return this->edgeList;
 	}
 	ListSequence<Vertex<Name>*>* getVetex() {
 		return this->vertexList;
 	}
-	
+
 	int getEdgeCount() {
 		return this->edgeList->GetSize();
 	}
